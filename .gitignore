@@ -47,3 +47,9 @@ app.*.map.json
 *.keystore
 android/key.properties
 keystore_base64.txt
+
+# Website (separate repo)
+website/
+
+# Release artifacts
+release/

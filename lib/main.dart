@@ -69,6 +69,3 @@ class SusuApp extends ConsumerWidget {
     );
   }
 }
-
-// Theme mode provider
-final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
