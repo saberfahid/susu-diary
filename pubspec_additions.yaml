@@ -1,0 +1,6 @@
+# Add flutter_sound for audio recording
+# Add audioplayers for playback (already present)
+# Uncomment record if flutter_sound fails
+
+# Add flutter_sound dependency
+flutter_sound: ^9.2.13

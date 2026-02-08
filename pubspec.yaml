@@ -45,9 +45,8 @@ dependencies:
   # Speech & Voice
   speech_to_text: ^6.6.0
   flutter_tts: ^3.8.5
-  # record: ^6.0.0  # Temporarily disabled - SDK incompatibility
+  record: ^5.1.3
   audioplayers: ^5.2.1
-  flutter_sound: ^9.2.13
 
   # Image & Media
   image_picker: ^1.0.7

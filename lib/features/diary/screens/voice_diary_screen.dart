@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
-import 'package:flutter_sound/flutter_sound.dart';
+import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:io';
@@ -15,7 +15,7 @@ class VoiceDiaryScreen extends StatefulWidget {
 }
 
 class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
-  FlutterSoundRecorder? _recorder;
+  final AudioRecorder _recorder = AudioRecorder();
   bool _isRecording = false;
   String? _currentPath;
   List<FileSystemEntity> _voiceEntries = [];
@@ -24,13 +24,7 @@ class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
   @override
   void initState() {
     super.initState();
-    _initRecorder();
     _loadEntries();
-  }
-
-  Future<void> _initRecorder() async {
-    _recorder = FlutterSoundRecorder();
-    await _recorder!.openRecorder();
   }
 
   Future<void> _loadEntries() async {
@@ -38,7 +32,7 @@ class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
     final folder = Directory('${dir.path}/voice_diary');
     if (!await folder.exists()) await folder.create();
     setState(() {
-      _voiceEntries = folder.listSync().where((f) => f.path.endsWith('.aac')).toList();
+      _voiceEntries = folder.listSync().where((f) => f.path.endsWith('.m4a')).toList();
     });
   }
 
@@ -47,8 +41,8 @@ class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
     final folder = Directory('${dir.path}/voice_diary');
     if (!await folder.exists()) await folder.create();
     final id = const Uuid().v4();
-    final path = '${folder.path}/$id.aac';
-    await _recorder!.startRecorder(toFile: path, codec: Codec.aacADTS);
+    final path = '${folder.path}/$id.m4a';
+    await _recorder.start(const RecordConfig(), path: path);
     setState(() {
       _isRecording = true;
       _currentPath = path;
@@ -56,7 +50,7 @@ class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
   }
 
   Future<void> _stopRecording() async {
-    await _recorder!.stopRecorder();
+    await _recorder.stop();
     setState(() {
       _isRecording = false;
       _currentPath = null;
@@ -70,7 +64,7 @@ class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
 
   @override
   void dispose() {
-    _recorder?.closeRecorder();
+    _recorder.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
