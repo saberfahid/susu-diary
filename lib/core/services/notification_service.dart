@@ -1,11 +1,31 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
+import 'dart:math';
 
 class NotificationService {
   static final NotificationService instance = NotificationService._init();
   final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
   bool _isInitialized = false;
+  final _random = Random();
+
+  // Cute & funny notification messages!
+  static const List<Map<String, String>> _cuteMessages = [
+    {'title': 'Hey Cutie! \u{1F338}', 'body': 'Your diary misses you! Come write something sweet~'},
+    {'title': 'Psst... \u{1F431}', 'body': 'Susu is lonely! Tell me about your day~'},
+    {'title': 'Dear Diary Time! \u{1F4D6}', 'body': 'Your feelings matter! Let\'s capture them together \u2728'},
+    {'title': 'Knock Knock! \u{1F49B}', 'body': 'Who\'s there? Your diary, waiting for your story!'},
+    {'title': 'Meow~ \u{1F63A}', 'body': 'Don\'t forget to pet your diary today!'},
+    {'title': 'Brain Dump Time! \u{1F9E0}', 'body': 'Empty your thoughts here, no judgment! \u{1F60A}'},
+    {'title': 'Sparkle Check \u2728', 'body': 'You\'re doing amazing sweetie! Write it down!'},
+    {'title': 'Susu Says Hi! \u{1F44B}', 'body': 'A moment of reflection makes life brighter \u{1F31F}'},
+    {'title': 'Diary O\'Clock! \u23F0', 'body': 'Time to spill the tea! \u{1F375} What happened today?'},
+    {'title': 'Feeling Check! \u{1F495}', 'body': 'How\'s your heart today? Tell Susu everything~'},
+    {'title': 'Plot Twist! \u{1F300}', 'body': 'Your life story needs today\'s chapter!'},
+    {'title': 'Hey Superstar! \u{1F31F}', 'body': 'Even small moments deserve to be remembered \u{1F496}'},
+  ];
+
+  Map<String, String> get _randomMessage => _cuteMessages[_random.nextInt(_cuteMessages.length)];
 
   NotificationService._init();
 
@@ -74,12 +94,13 @@ class NotificationService {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
+    final msg = _randomMessage;
     await _notifications.zonedSchedule(
       0,
-      'Time to Reflect 📝',
-      'Take a moment to write in your diary',
+      msg['title']!,
+      msg['body']!,
       tz.TZDateTime.from(scheduledDate, tz.local),
-      const NotificationDetails(
+      NotificationDetails(
         android: AndroidNotificationDetails(
           'daily_reminder',
           'Daily Reminder',
@@ -106,11 +127,12 @@ class NotificationService {
   }
 
   Future<void> showTestNotification() async {
+    final msg = _randomMessage;
     await _notifications.show(
       999,
-      'Susu 📝',
-      'Notifications are working!',
-      const NotificationDetails(
+      msg['title']!,
+      msg['body']!,
+      NotificationDetails(
         android: AndroidNotificationDetails(
           'test',
           'Test Notifications',
