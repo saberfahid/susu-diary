@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
-import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:io';
@@ -15,11 +15,13 @@ class VoiceDiaryScreen extends StatefulWidget {
 }
 
 class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
-  final AudioRecorder _recorder = AudioRecorder();
+  static const _channel = MethodChannel('com.susu.diary/recorder');
   bool _isRecording = false;
   String? _currentPath;
   List<FileSystemEntity> _voiceEntries = [];
   final AudioPlayer _audioPlayer = AudioPlayer();
+  String? _playingPath;
+  Duration _recordDuration = Duration.zero;
 
   @override
   void initState() {
@@ -31,8 +33,10 @@ class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
     final dir = await getApplicationDocumentsDirectory();
     final folder = Directory('${dir.path}/voice_diary');
     if (!await folder.exists()) await folder.create();
+    final entries = folder.listSync().where((f) => f.path.endsWith('.m4a')).toList();
+    entries.sort((a, b) => b.statSync().modified.compareTo(a.statSync().modified));
     setState(() {
-      _voiceEntries = folder.listSync().where((f) => f.path.endsWith('.m4a')).toList();
+      _voiceEntries = entries;
     });
   }
 
@@ -42,15 +46,36 @@ class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
     if (!await folder.exists()) await folder.create();
     final id = const Uuid().v4();
     final path = '${folder.path}/$id.m4a';
-    await _recorder.start(const RecordConfig(), path: path);
-    setState(() {
-      _isRecording = true;
-      _currentPath = path;
+    try {
+      await _channel.invokeMethod('startRecording', {'path': path});
+      setState(() {
+        _isRecording = true;
+        _currentPath = path;
+        _recordDuration = Duration.zero;
+      });
+      _tickTimer();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not start recording: $e')),
+        );
+      }
+    }
+  }
+
+  void _tickTimer() {
+    Future.delayed(const Duration(seconds: 1), () {
+      if (_isRecording && mounted) {
+        setState(() => _recordDuration += const Duration(seconds: 1));
+        _tickTimer();
+      }
     });
   }
 
   Future<void> _stopRecording() async {
-    await _recorder.stop();
+    try {
+      await _channel.invokeMethod('stopRecording');
+    } catch (_) {}
     setState(() {
       _isRecording = false;
       _currentPath = null;
@@ -60,11 +85,43 @@ class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
 
   Future<void> _playEntry(String path) async {
     await _audioPlayer.play(DeviceFileSource(path));
+    setState(() => _playingPath = path);
+    _audioPlayer.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => _playingPath = null);
+    });
+  }
+
+  Future<void> _deleteEntry(FileSystemEntity entry) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Entry?'),
+        content: const Text('This voice diary entry will be permanently deleted.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await entry.delete();
+      await _loadEntries();
+    }
+  }
+
+  String _formatDuration(Duration d) {
+    final min = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final sec = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$min:$sec';
+  }
+
+  String _formatDate(DateTime dt) {
+    final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
   @override
   void dispose() {
-    _recorder.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -145,7 +202,7 @@ class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
                 ),
             const SizedBox(height: 24),
             Text(
-              _isRecording ? 'Recording...' : 'Tap to record your diary',
+              _isRecording ? 'Recording... ${_formatDuration(_recordDuration)}' : 'Tap to record your diary',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -191,16 +248,37 @@ class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
                       itemCount: _voiceEntries.length,
                       itemBuilder: (context, idx) {
                         final entry = _voiceEntries[idx];
-                        final name = entry.path.split('/').last;
+                        final stat = entry.statSync();
+                        final date = stat.modified;
+                        final isPlaying = _playingPath == entry.path;
                         return Card(
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           child: ListTile(
                             leading: Icon(Icons.record_voice_over, color: AppTheme.primaryColor),
                             title: Text('Entry ${idx + 1}'),
-                            subtitle: Text(name),
-                            trailing: IconButton(
-                              icon: Icon(Icons.play_arrow, color: AppTheme.accentColor),
-                              onPressed: () => _playEntry(entry.path),
+                            subtitle: Text(_formatDate(date)),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    isPlaying ? Icons.pause_circle : Icons.play_arrow,
+                                    color: AppTheme.accentColor,
+                                  ),
+                                  onPressed: () {
+                                    if (isPlaying) {
+                                      _audioPlayer.pause();
+                                      setState(() => _playingPath = null);
+                                    } else {
+                                      _playEntry(entry.path);
+                                    }
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                  onPressed: () => _deleteEntry(entry),
+                                ),
+                              ],
                             ),
                           ),
                         );
