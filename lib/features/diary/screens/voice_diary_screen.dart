@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:io';
 import 'package:uuid/uuid.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class VoiceDiaryScreen extends StatefulWidget {
   const VoiceDiaryScreen({super.key});
@@ -41,6 +42,17 @@ class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
   }
 
   Future<void> _startRecording() async {
+    // Request microphone permission at runtime
+    final micStatus = await Permission.microphone.request();
+    if (!micStatus.isGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Microphone permission is required to record')),
+        );
+      }
+      return;
+    }
+
     final dir = await getApplicationDocumentsDirectory();
     final folder = Directory('${dir.path}/voice_diary');
     if (!await folder.exists()) await folder.create();

@@ -35,10 +35,10 @@ mask_draw = ImageDraw.Draw(mask)
 radius = 180
 mask_draw.rounded_rectangle([(0, 0), (size - 1, size - 1)], radius=radius, fill=255)
 
-# Place source image centered, scaled to ~70% of icon with padding
+# Place source image centered, scaled to ~88% of icon for strong visual presence
 src_w, src_h = src.size
-# Scale to fit in 70% of 1024
-max_dim = int(size * 0.68)
+# Scale to fit in 88% of 1024
+max_dim = int(size * 0.88)
 scale = min(max_dim / src_w, max_dim / src_h)
 new_w = int(src_w * scale)
 new_h = int(src_h * scale)
@@ -63,8 +63,8 @@ print(f"✓ app_icon.png saved ({size}x{size})")
 fg_size = 1024
 foreground = Image.new("RGBA", (fg_size, fg_size), (0, 0, 0, 0))
 
-# Scale source to fit in the safe zone (~62% for extra safety)
-safe_pct = 0.58
+# Scale source to fit in the safe zone (~72% - fills the visible area well)
+safe_pct = 0.72
 safe_dim = int(fg_size * safe_pct)
 fg_scale = min(safe_dim / src_w, safe_dim / src_h)
 fg_w = int(src_w * fg_scale)

@@ -107,7 +107,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     : (value) async {
                         if (value) {
                           final success = await SecurityService.instance
-                              .authenticateWithBiometrics();
+                              .authenticateWithBiometrics(skipEnabledCheck: true);
                           if (success) {
                             await SecurityService.instance
                                 .setBiometricsEnabled(true);

@@ -96,10 +96,12 @@ class SecurityService {
     await prefs.setBool(_biometricsEnabledKey, enabled);
   }
 
-  Future<bool> authenticateWithBiometrics() async {
+  Future<bool> authenticateWithBiometrics({bool skipEnabledCheck = false}) async {
     try {
-      final biometricsEnabled = await isBiometricsEnabled();
-      if (!biometricsEnabled) return false;
+      if (!skipEnabledCheck) {
+        final biometricsEnabled = await isBiometricsEnabled();
+        if (!biometricsEnabled) return false;
+      }
 
       return await _localAuth.authenticate(
         localizedReason: 'Authenticate to access Susu',

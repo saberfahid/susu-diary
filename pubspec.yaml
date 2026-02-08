@@ -46,6 +46,7 @@ dependencies:
   speech_to_text: ^6.6.0
   flutter_tts: ^3.8.5
   audioplayers: ^5.2.1
+  permission_handler: ^11.3.0
 
   # Image & Media
   image_picker: ^1.0.7

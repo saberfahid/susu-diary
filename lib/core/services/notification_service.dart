@@ -33,6 +33,17 @@ class NotificationService {
     if (_isInitialized) return;
 
     tz.initializeTimeZones();
+    
+    // Set the local timezone
+    final now = DateTime.now();
+    final offset = now.timeZoneOffset;
+    final locationName = 'Etc/GMT${offset.isNegative ? '+' : '-'}${offset.inHours.abs()}';
+    try {
+      tz.setLocalLocation(tz.getLocation(locationName));
+    } catch (_) {
+      // Fallback to UTC if location not found
+      tz.setLocalLocation(tz.getLocation('UTC'));
+    }
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
@@ -50,6 +61,9 @@ class NotificationService {
       settings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
+
+    // Request notification permission on Android 13+
+    await requestPermissions();
 
     _isInitialized = true;
   }
