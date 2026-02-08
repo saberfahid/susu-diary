@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
@@ -12,6 +13,13 @@ import 'core/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load saved theme preference
+  bool isDarkMode = false;
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    isDarkMode = prefs.getBool('dark_mode') ?? false;
+  } catch (_) {}
   
   try {
     // Initialize Hive for local storage
@@ -45,8 +53,13 @@ void main() async {
   );
 
   runApp(
-    const ProviderScope(
-      child: SusuApp(),
+    ProviderScope(
+      overrides: [
+        themeModeProvider.overrideWith(
+          (ref) => isDarkMode ? ThemeMode.dark : ThemeMode.light,
+        ),
+      ],
+      child: const SusuApp(),
     ),
   );
 }

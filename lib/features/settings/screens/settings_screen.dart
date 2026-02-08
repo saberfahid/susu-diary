@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/security_service.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../core/services/ai_service.dart';
 import '../../../core/services/database_service.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
-  bool _isDarkMode = false;
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _biometricsEnabled = false;
-  bool _notificationsEnabled = true;
+  bool _biometricsAvailable = false;
+  bool _notificationsEnabled = false;
+  bool _hasPinSet = false;
   TimeOfDay _reminderTime = const TimeOfDay(hour: 21, minute: 0);
 
   @override
@@ -26,9 +31,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     final biometrics = await SecurityService.instance.isBiometricsEnabled();
+    final biometricsAvailable = await SecurityService.instance.isBiometricsAvailable();
+    final hasPinSet = await SecurityService.instance.isPinSet();
     
+    // Load notification preferences
+    final prefs = await SharedPreferences.getInstance();
+    final notifEnabled = prefs.getBool('notifications_enabled') ?? false;
+    final reminderHour = prefs.getInt('reminder_hour') ?? 21;
+    final reminderMinute = prefs.getInt('reminder_minute') ?? 0;
+    
+    if (!mounted) return;
     setState(() {
       _biometricsEnabled = biometrics;
+      _biometricsAvailable = biometricsAvailable;
+      _hasPinSet = hasPinSet;
+      _notificationsEnabled = notifEnabled;
+      _reminderTime = TimeOfDay(hour: reminderHour, minute: reminderMinute);
     });
   }
 
@@ -53,10 +71,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: Icons.dark_mode_rounded,
                 title: 'Dark Mode',
                 subtitle: 'Toggle dark theme',
-                value: _isDarkMode,
+                value: ref.watch(themeModeProvider) == ThemeMode.dark,
                 onChanged: (value) {
-                  setState(() => _isDarkMode = value);
-                  // TODO: Implement theme switching with provider
+                  ref.read(themeModeProvider.notifier).state =
+                      value ? ThemeMode.dark : ThemeMode.light;
+                  _saveThemePreference(value);
                 },
               ),
             ]).animate().fadeIn(delay: 50.ms),
@@ -71,28 +90,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSettingsCard([
               _buildActionTile(
                 icon: Icons.pin_rounded,
-                title: 'Change PIN',
-                subtitle: 'Update your security PIN',
+                title: _hasPinSet ? 'Change PIN' : 'Set PIN',
+                subtitle: _hasPinSet ? 'Update your security PIN' : 'Set up a security PIN',
                 onTap: _showChangePinDialog,
               ),
               const Divider(height: 1),
               _buildSwitchTile(
                 icon: Icons.fingerprint_rounded,
                 title: 'Biometric Unlock',
-                subtitle: 'Use fingerprint or face ID',
+                subtitle: _biometricsAvailable
+                    ? 'Use fingerprint or face ID'
+                    : 'Not available on this device',
                 value: _biometricsEnabled,
-                onChanged: (value) async {
-                  if (value) {
-                    final success = await SecurityService.instance.authenticateWithBiometrics();
-                    if (success) {
-                      await SecurityService.instance.setBiometricsEnabled(true);
-                      setState(() => _biometricsEnabled = true);
-                    }
-                  } else {
-                    await SecurityService.instance.setBiometricsEnabled(false);
-                    setState(() => _biometricsEnabled = false);
-                  }
-                },
+                onChanged: !_biometricsAvailable
+                    ? null
+                    : (value) async {
+                        if (value) {
+                          final success = await SecurityService.instance
+                              .authenticateWithBiometrics();
+                          if (success) {
+                            await SecurityService.instance
+                                .setBiometricsEnabled(true);
+                            setState(() => _biometricsEnabled = true);
+                          } else {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'Biometric authentication failed')),
+                            );
+                          }
+                        } else {
+                          await SecurityService.instance
+                              .setBiometricsEnabled(false);
+                          setState(() => _biometricsEnabled = false);
+                        }
+                      },
               ),
             ]).animate().fadeIn(delay: 150.ms),
 
@@ -126,9 +159,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: 'Daily Reminder',
                 subtitle: 'Get reminded to write',
                 value: _notificationsEnabled,
-                onChanged: (value) {
+                onChanged: (value) async {
                   setState(() => _notificationsEnabled = value);
-                  // TODO: Schedule/cancel notifications
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('notifications_enabled', value);
+                  if (value) {
+                    await NotificationService.instance.requestPermissions();
+                    await NotificationService.instance.scheduleDailyReminder(
+                      hour: _reminderTime.hour,
+                      minute: _reminderTime.minute,
+                    );
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(
+                              'Reminder set for ${_reminderTime.format(context)}')),
+                    );
+                  } else {
+                    await NotificationService.instance.cancelAllReminders();
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Reminder disabled')),
+                    );
+                  }
                 },
               ),
               if (_notificationsEnabled) ...[
@@ -185,7 +238,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: 'Privacy Policy',
                 subtitle: 'View our privacy policy',
                 onTap: () {
-                  // TODO: Navigate to privacy policy
+                  _launchUrl('https://susu-diary.pages.dev/privacy.html');
                 },
               ),
               const Divider(height: 1),
@@ -194,7 +247,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: 'Terms of Service',
                 subtitle: 'View terms and conditions',
                 onTap: () {
-                  // TODO: Navigate to terms
+                  _launchUrl('https://susu-diary.pages.dev/terms.html');
                 },
               ),
             ]).animate().fadeIn(delay: 550.ms),
@@ -302,7 +355,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String title,
     required String subtitle,
     required bool value,
-    required ValueChanged<bool> onChanged,
+    required ValueChanged<bool>? onChanged,
   }) {
     return ListTile(
       leading: Container(
@@ -392,7 +445,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 4),
-          Text('${usedK}K / 500K tokens (${remainingK}K remaining)', 
+          Text('${usedK}K / 10K tokens (${remainingK}K remaining)', 
               style: const TextStyle(fontSize: 12)),
           const SizedBox(height: 6),
           ClipRRect(
@@ -424,21 +477,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Change PIN'),
+        title: Text(_hasPinSet ? 'Change PIN' : 'Set PIN'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: currentPinController,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Current PIN',
-                counterText: '',
+            if (_hasPinSet)
+              TextField(
+                controller: currentPinController,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Current PIN',
+                  counterText: '',
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
+            if (_hasPinSet) const SizedBox(height: 12),
             TextField(
               controller: newPinController,
               keyboardType: TextInputType.number,
@@ -469,6 +523,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
+              if (newPinController.text.length < 4) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('PIN must be at least 4 digits')),
+                );
+                return;
+              }
+
               if (newPinController.text != confirmPinController.text) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('New PINs do not match')),
@@ -476,23 +537,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 return;
               }
 
-              final success = await SecurityService.instance.changePin(
-                currentPinController.text,
-                newPinController.text,
-              );
+              bool success;
+              if (_hasPinSet) {
+                success = await SecurityService.instance.changePin(
+                  currentPinController.text,
+                  newPinController.text,
+                );
+              } else {
+                await SecurityService.instance.setPin(newPinController.text);
+                success = true;
+              }
 
               if (!mounted) return;
               Navigator.pop(context);
 
+              if (success) {
+                setState(() => _hasPinSet = true);
+              }
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    success ? 'PIN changed successfully' : 'Incorrect current PIN',
+                    success
+                        ? (_hasPinSet ? 'PIN changed successfully' : 'PIN set successfully')
+                        : 'Incorrect current PIN',
                   ),
                 ),
               );
             },
-            child: const Text('Change'),
+            child: Text(_hasPinSet ? 'Change' : 'Set PIN'),
           ),
         ],
       ),
@@ -507,8 +580,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (time != null) {
       setState(() => _reminderTime = time);
-      // TODO: Schedule notification
+      
+      // Save preference
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('reminder_hour', time.hour);
+      await prefs.setInt('reminder_minute', time.minute);
+      
+      // Reschedule notification if enabled
+      if (_notificationsEnabled) {
+        await NotificationService.instance.scheduleDailyReminder(
+          hour: time.hour,
+          minute: time.minute,
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Reminder updated to ${time.format(context)}')),
+        );
+      }
     }
+  }
+
+  Future<void> _saveThemePreference(bool isDark) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('dark_mode', isDark);
   }
 
   Future<void> _exportData() async {
@@ -570,6 +664,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ElevatedButton(
             onPressed: () async {
               await DatabaseService.instance.deleteAllData();
+              if (!mounted) return;
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('All data deleted')),
@@ -581,5 +676,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 }

@@ -12,8 +12,8 @@ class AIService {
   String _baseUrl = 'https://api.longcat.chat/openai/v1';
   String _model = 'LongCat-Flash-Chat';
   
-  // Daily usage tracking (500,000 tokens free per day)
-  static const int _dailyTokenLimit = 500000;
+  // Daily usage tracking (10,000 tokens free per day)
+  static const int _dailyTokenLimit = 10000;
   static const String _usageKey = 'longcat_daily_usage';
   static const String _usageDateKey = 'longcat_usage_date';
   int _tokensUsedToday = 0;
@@ -377,7 +377,7 @@ Keep it to 2-3 sentences, personal and reflective in tone.''';
   Future<String> _chatCompletion(String prompt) async {
     // Check daily limit
     if (hasReachedLimit) {
-      return "Daily AI limit reached (500,000 tokens). Resets at midnight Beijing time.";
+      return "Daily AI limit reached (10,000 tokens). Resets at midnight Beijing time.";
     }
 
     try {
@@ -421,7 +421,7 @@ Keep it to 2-3 sentences, personal and reflective in tone.''';
   Future<String> _chatCompletionWithMessages(List<Map<String, String>> messages) async {
     // Check daily limit
     if (hasReachedLimit) {
-      return "Daily AI limit reached (500,000 tokens). Resets at midnight Beijing time.";
+      return "Daily AI limit reached (10,000 tokens). Resets at midnight Beijing time.";
     }
 
     try {
