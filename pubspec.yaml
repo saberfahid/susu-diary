@@ -59,7 +59,7 @@ dependencies:
   json_annotation: ^4.8.1
 
   # Notifications
-  flutter_local_notifications: ^16.3.2
+  flutter_local_notifications: ^17.0.0
   timezone: ^0.9.2
 
 dev_dependencies:
