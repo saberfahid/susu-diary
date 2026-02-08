@@ -1,6 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/data/latest.dart' as tzdata;
 import 'dart:math';
 
 class NotificationService {
@@ -32,18 +32,7 @@ class NotificationService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    tz.initializeTimeZones();
-    
-    // Set the local timezone
-    final now = DateTime.now();
-    final offset = now.timeZoneOffset;
-    final locationName = 'Etc/GMT${offset.isNegative ? '+' : '-'}${offset.inHours.abs()}';
-    try {
-      tz.setLocalLocation(tz.getLocation(locationName));
-    } catch (_) {
-      // Fallback to UTC if location not found
-      tz.setLocalLocation(tz.getLocation('UTC'));
-    }
+    tzdata.initializeTimeZones();
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
@@ -79,7 +68,10 @@ class NotificationService {
         IOSFlutterLocalNotificationsPlugin>();
 
     if (android != null) {
+      // Request notification permission
       final granted = await android.requestNotificationsPermission();
+      // Also request exact alarm permission for Android 12+
+      await android.requestExactAlarmsPermission();
       return granted ?? false;
     }
 
@@ -95,35 +87,55 @@ class NotificationService {
     return false;
   }
 
+  /// Convert a local DateTime to a TZDateTime in UTC.
+  /// This avoids all timezone name resolution issues.
+  tz.TZDateTime _localToTZDateTime(DateTime localDateTime) {
+    // Convert local time to UTC using Dart's built-in conversion
+    final utc = localDateTime.toUtc();
+    return tz.TZDateTime.utc(
+      utc.year, utc.month, utc.day,
+      utc.hour, utc.minute, utc.second,
+    );
+  }
+
   Future<void> scheduleDailyReminder({
     required int hour,
     required int minute,
   }) async {
     await _notifications.cancelAll();
 
+    // Build the target time in local DateTime (Dart handles local tz correctly)
     final now = DateTime.now();
-    var scheduledDate = DateTime(now.year, now.month, now.day, hour, minute);
-    
-    if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    var scheduledLocal = DateTime(now.year, now.month, now.day, hour, minute);
+
+    if (scheduledLocal.isBefore(now)) {
+      scheduledLocal = scheduledLocal.add(const Duration(days: 1));
     }
+
+    // Convert to TZDateTime via UTC - bypasses all timezone name lookup issues
+    final tzScheduled = _localToTZDateTime(scheduledLocal);
 
     final msg = _randomMessage;
     await _notifications.zonedSchedule(
       0,
       msg['title']!,
       msg['body']!,
-      tz.TZDateTime.from(scheduledDate, tz.local),
+      tzScheduled,
       NotificationDetails(
         android: AndroidNotificationDetails(
           'daily_reminder',
           'Daily Reminder',
           channelDescription: 'Daily reminder to write in your diary',
-          importance: Importance.high,
-          priority: Priority.high,
+          importance: Importance.max,
+          priority: Priority.max,
           icon: '@mipmap/ic_launcher',
+          playSound: true,
+          enableVibration: true,
+          visibility: NotificationVisibility.public,
+          category: AndroidNotificationCategory.reminder,
+          fullScreenIntent: true,
         ),
-        iOS: DarwinNotificationDetails(
+        iOS: const DarwinNotificationDetails(
           presentAlert: true,
           presentBadge: true,
           presentSound: true,
@@ -148,13 +160,20 @@ class NotificationService {
       msg['body']!,
       NotificationDetails(
         android: AndroidNotificationDetails(
-          'test',
-          'Test Notifications',
-          channelDescription: 'Test notification channel',
-          importance: Importance.high,
-          priority: Priority.high,
+          'daily_reminder',
+          'Daily Reminder',
+          channelDescription: 'Daily reminder to write in your diary',
+          importance: Importance.max,
+          priority: Priority.max,
+          icon: '@mipmap/ic_launcher',
+          playSound: true,
+          enableVibration: true,
         ),
-        iOS: DarwinNotificationDetails(),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
       ),
     );
   }

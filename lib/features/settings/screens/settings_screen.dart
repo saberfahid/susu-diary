@@ -164,7 +164,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   final prefs = await SharedPreferences.getInstance();
                   await prefs.setBool('notifications_enabled', value);
                   if (value) {
-                    await NotificationService.instance.requestPermissions();
+                    final granted = await NotificationService.instance.requestPermissions();
+                    if (!granted) {
+                      setState(() => _notificationsEnabled = false);
+                      await prefs.setBool('notifications_enabled', false);
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please allow notifications in device settings'),
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                      return;
+                    }
                     await NotificationService.instance.scheduleDailyReminder(
                       hour: _reminderTime.hour,
                       minute: _reminderTime.minute,
@@ -191,6 +203,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   title: 'Reminder Time',
                   subtitle: _reminderTime.format(context),
                   onTap: _showTimePickerDialog,
+                ),
+                const Divider(height: 1),
+                _buildActionTile(
+                  icon: Icons.notifications_active_rounded,
+                  title: 'Test Notification',
+                  subtitle: 'Send a test notification now',
+                  onTap: () async {
+                    await NotificationService.instance.showTestNotification();
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Test notification sent! Check your notifications.')),
+                    );
+                  },
                 ),
               ],
             ]).animate().fadeIn(delay: 350.ms),
