@@ -8,7 +8,7 @@ class VoiceDiaryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundPink,
+      backgroundColor: AppTheme.lightBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -20,7 +20,7 @@ class VoiceDiaryScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryPurple.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withOpacity(0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -28,7 +28,7 @@ class VoiceDiaryScreen extends StatelessWidget {
             ),
             child: Icon(
               Icons.arrow_back_ios_new,
-              color: AppTheme.primaryPurple,
+              color: AppTheme.primaryColor,
               size: 18,
             ),
           ),
@@ -37,7 +37,7 @@ class VoiceDiaryScreen extends StatelessWidget {
         title: Text(
           'Voice Diary',
           style: TextStyle(
-            color: AppTheme.textDark,
+            color: AppTheme.lightText,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -55,8 +55,8 @@ class VoiceDiaryScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppTheme.primaryPurple.withOpacity(0.2),
-                      AppTheme.accentBlue.withOpacity(0.2),
+                      AppTheme.primaryColor.withOpacity(0.2),
+                      AppTheme.accentColor.withOpacity(0.2),
                     ],
                   ),
                   shape: BoxShape.circle,
@@ -64,7 +64,7 @@ class VoiceDiaryScreen extends StatelessWidget {
                 child: Icon(
                   Icons.mic,
                   size: 60,
-                  color: AppTheme.primaryPurple,
+                  color: AppTheme.primaryColor,
                 ),
               )
                   .animate(onPlay: (c) => c.repeat())
@@ -85,7 +85,7 @@ class VoiceDiaryScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.textDark,
+                  color: AppTheme.lightText,
                 ),
               ),
               const SizedBox(height: 16),
@@ -94,7 +94,7 @@ class VoiceDiaryScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.primaryPurple,
+                  color: AppTheme.primaryColor,
                 ),
               ),
               const SizedBox(height: 16),
@@ -103,7 +103,7 @@ class VoiceDiaryScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: AppTheme.textLight,
+                  color: AppTheme.lightTextSecondary,
                   height: 1.5,
                 ),
               ),
@@ -115,7 +115,7 @@ class VoiceDiaryScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryPurple.withOpacity(0.1),
+                      color: AppTheme.primaryColor.withOpacity(0.1),
                       blurRadius: 20,
                       offset: const Offset(0, 4),
                     ),
@@ -126,13 +126,13 @@ class VoiceDiaryScreen extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.edit_note,
-                      color: AppTheme.secondaryPink,
+                      color: AppTheme.secondaryColor,
                     ),
                     const SizedBox(width: 12),
                     Text(
                       'Try text diary instead!',
                       style: TextStyle(
-                        color: AppTheme.textDark,
+                        color: AppTheme.lightText,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
