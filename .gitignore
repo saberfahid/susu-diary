@@ -48,6 +48,12 @@ app.*.map.json
 android/key.properties
 keystore_base64.txt
 upload_secrets.py
+check_build.py
+check_logs.py
+check_aab_log.py
+check_step.py
+download_release.py
+create_store_assets.py
 
 # Website (separate repo)
 website/

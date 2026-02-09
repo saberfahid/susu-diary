@@ -18,8 +18,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<OnboardingPage> _pages = [
     OnboardingPage(
       icon: Icons.auto_stories_rounded,
-      title: 'Your Personal Diary',
-      description: 'Write your thoughts, feelings, and memories. Your private space to reflect on life.',
+      title: 'Your AI Diary',
+      description: 'Write your thoughts, feelings, and memories. Let AI help you reflect and grow.',
       color: AppTheme.primaryColor,
     ),
     OnboardingPage(

@@ -257,7 +257,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _buildInfoTile(
                 icon: Icons.info_outline_rounded,
                 title: 'Version',
-                subtitle: '1.0.3',
+                subtitle: '1.0.4',
               ),
               const Divider(height: 1),
               _buildActionTile(
@@ -339,7 +339,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Version 1.0.3',
+                    'Version 1.0.4',
                     style: TextStyle(
                       fontSize: 11,
                       color: Colors.grey.shade400,
