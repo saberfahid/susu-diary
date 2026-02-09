@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/models/diary_entry.dart';
+import '../../../core/services/database_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:io';
@@ -88,6 +90,21 @@ class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
     try {
       await _channel.invokeMethod('stopRecording');
     } catch (_) {}
+    
+    // Save as a DiaryEntry so it appears on the home page
+    if (_currentPath != null) {
+      final entry = DiaryEntry.create(
+        title: 'Voice Diary',
+        content: 'Voice diary entry recorded on ${_formatDate(DateTime.now())}',
+        mood: 'happy',
+        energyLevel: 3,
+        tags: ['voice'],
+        voiceNoteUrl: _currentPath,
+        isVoiceEntry: true,
+      );
+      await DatabaseService.instance.insertEntry(entry);
+    }
+    
     setState(() {
       _isRecording = false;
       _currentPath = null;
@@ -116,6 +133,14 @@ class _VoiceDiaryScreenState extends State<VoiceDiaryScreen> {
       ),
     );
     if (confirm == true) {
+      // Also remove from database
+      final allEntries = await DatabaseService.instance.getAllEntries();
+      for (final dbEntry in allEntries) {
+        if (dbEntry.voiceNoteUrl == entry.path) {
+          await DatabaseService.instance.deleteEntry(dbEntry.id);
+          break;
+        }
+      }
       await entry.delete();
       await _loadEntries();
     }

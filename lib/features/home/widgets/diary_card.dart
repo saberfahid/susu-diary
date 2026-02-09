@@ -91,13 +91,23 @@ class DiaryCard extends StatelessWidget {
                       const SizedBox(height: 8),
                       
                       // Title
-                      Text(
-                        entry.title,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
+                      Row(
+                        children: [
+                          if (entry.isVoiceEntry) ...[
+                            Icon(Icons.mic_rounded, size: 18, color: AppTheme.accentColor),
+                            const SizedBox(width: 4),
+                          ],
+                          Expanded(
+                            child: Text(
+                              entry.title,
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       

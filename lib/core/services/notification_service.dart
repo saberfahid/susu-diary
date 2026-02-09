@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 
 class NotificationService {
@@ -121,21 +122,21 @@ class NotificationService {
       msg['title']!,
       msg['body']!,
       tzScheduled,
-      NotificationDetails(
+      const NotificationDetails(
         android: AndroidNotificationDetails(
-          'daily_reminder',
+          'daily_reminder_v2',
           'Daily Reminder',
           channelDescription: 'Daily reminder to write in your diary',
           importance: Importance.max,
           priority: Priority.max,
           icon: '@mipmap/ic_launcher',
           playSound: true,
+          sound: RawResourceAndroidNotificationSound('cute_notification'),
           enableVibration: true,
           visibility: NotificationVisibility.public,
           category: AndroidNotificationCategory.reminder,
-          fullScreenIntent: true,
         ),
-        iOS: const DarwinNotificationDetails(
+        iOS: DarwinNotificationDetails(
           presentAlert: true,
           presentBadge: true,
           presentSound: true,
@@ -158,23 +159,38 @@ class NotificationService {
       999,
       msg['title']!,
       msg['body']!,
-      NotificationDetails(
+      const NotificationDetails(
         android: AndroidNotificationDetails(
-          'daily_reminder',
+          'daily_reminder_v2',
           'Daily Reminder',
           channelDescription: 'Daily reminder to write in your diary',
           importance: Importance.max,
           priority: Priority.max,
           icon: '@mipmap/ic_launcher',
           playSound: true,
+          sound: RawResourceAndroidNotificationSound('cute_notification'),
           enableVibration: true,
         ),
-        iOS: const DarwinNotificationDetails(
+        iOS: DarwinNotificationDetails(
           presentAlert: true,
           presentBadge: true,
           presentSound: true,
         ),
       ),
     );
+  }
+
+  /// Re-schedule reminder after device reboot.
+  /// Called from main.dart on app start to ensure notifications persist.
+  Future<void> rescheduleIfEnabled() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final enabled = prefs.getBool('notifications_enabled') ?? false;
+      if (enabled) {
+        final hour = prefs.getInt('reminder_hour') ?? 21;
+        final minute = prefs.getInt('reminder_minute') ?? 0;
+        await scheduleDailyReminder(hour: hour, minute: minute);
+      }
+    } catch (_) {}
   }
 }

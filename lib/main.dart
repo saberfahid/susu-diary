@@ -31,6 +31,8 @@ void main() async {
     // Initialize notifications (skip on web - not fully supported)
     if (!kIsWeb) {
       await NotificationService.instance.initialize();
+      // Re-schedule any active reminder (survives app restart/reboot)
+      await NotificationService.instance.rescheduleIfEnabled();
     }
   } catch (e) {
     debugPrint('Initialization error: $e');
