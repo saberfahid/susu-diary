@@ -47,6 +47,7 @@ app.*.map.json
 *.keystore
 android/key.properties
 keystore_base64.txt
+upload_secrets.py
 
 # Website (separate repo)
 website/
