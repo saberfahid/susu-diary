@@ -8,6 +8,8 @@ import '../../../core/services/security_service.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/services/ai_service.dart';
 import '../../../core/services/database_service.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_of_service_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -255,7 +257,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _buildInfoTile(
                 icon: Icons.info_outline_rounded,
                 title: 'Version',
-                subtitle: '1.0.0',
+                subtitle: '1.0.3',
               ),
               const Divider(height: 1),
               _buildActionTile(
@@ -263,7 +265,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 title: 'Privacy Policy',
                 subtitle: 'View our privacy policy',
                 onTap: () {
-                  _launchUrl('https://susu-diary.pages.dev/privacy.html');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PrivacyPolicyScreen(),
+                    ),
+                  );
                 },
               ),
               const Divider(height: 1),
@@ -272,7 +279,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 title: 'Terms of Service',
                 subtitle: 'View terms and conditions',
                 onTap: () {
-                  _launchUrl('https://susu-diary.pages.dev/terms.html');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TermsOfServiceScreen(),
+                    ),
+                  );
                 },
               ),
             ]).animate().fadeIn(delay: 550.ms),
@@ -327,7 +339,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Version 1.0.0',
+                    'Version 1.0.3',
                     style: TextStyle(
                       fontSize: 11,
                       color: Colors.grey.shade400,
