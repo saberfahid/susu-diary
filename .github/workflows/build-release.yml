@@ -29,7 +29,7 @@ jobs:
       
       - name: Decode Keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/susu-release-key.jks
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/susu-release-key.jks
       
       - name: Create key.properties
         run: |
