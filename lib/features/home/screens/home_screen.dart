@@ -410,7 +410,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             TextButton(
               onPressed: () {
-                // TODO: Navigate to all entries
+                Navigator.pushNamed(context, AppRouter.moodCalendar).then((_) => _loadData());
               },
               child: const Text('See All'),
             ),

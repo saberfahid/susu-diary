@@ -257,7 +257,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _buildInfoTile(
                 icon: Icons.info_outline_rounded,
                 title: 'Version',
-                subtitle: '1.0.4',
+                subtitle: '1.0.5',
               ),
               const Divider(height: 1),
               _buildActionTile(
@@ -339,7 +339,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Version 1.0.4',
+                    'Version 1.0.5',
                     style: TextStyle(
                       fontSize: 11,
                       color: Colors.grey.shade400,
@@ -482,7 +482,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 4),
-          Text('${usedK}K / 10K tokens (${remainingK}K remaining)', 
+          Text('${usedK}K / 1.5K tokens (${remainingK}K remaining)', 
               style: const TextStyle(fontSize: 12)),
           const SizedBox(height: 6),
           ClipRRect(

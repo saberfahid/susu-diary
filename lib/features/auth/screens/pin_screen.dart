@@ -410,7 +410,9 @@ class _PinScreenState extends State<PinScreen> with SingleTickerProviderStateMix
                         ? 'Please wait before trying again'
                         : 'Enter your PIN to unlock',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey.shade600,
+                          color: Theme.of(context).brightness == Brightness.dark 
+                              ? Colors.grey.shade400 
+                              : Colors.grey.shade600,
                         ),
                   ),
                   
@@ -530,6 +532,7 @@ class _PinScreenState extends State<PinScreen> with SingleTickerProviderStateMix
     }
     
     if (value == 'back') {
+      final isDarkBack = Theme.of(context).brightness == Brightness.dark;
       return SizedBox(
         width: 70,
         height: 70,
@@ -537,12 +540,14 @@ class _PinScreenState extends State<PinScreen> with SingleTickerProviderStateMix
           onPressed: _isLocked ? null : _onBackspace,
           icon: Icon(
             Icons.backspace_outlined,
-            color: _isLocked ? Colors.grey : null,
+            color: _isLocked ? Colors.grey : (isDarkBack ? Colors.white70 : null),
           ),
           iconSize: 28,
         ),
       );
     }
+    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return GestureDetector(
       onTap: () => _onNumberTap(value),
@@ -551,7 +556,9 @@ class _PinScreenState extends State<PinScreen> with SingleTickerProviderStateMix
         height: 70,
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: _isLocked ? Colors.grey.shade200 : Colors.grey.shade100,
+          color: _isLocked 
+              ? (isDark ? Colors.grey.shade800 : Colors.grey.shade200) 
+              : (isDark ? Colors.white.withOpacity(0.12) : Colors.grey.shade100),
           shape: BoxShape.circle,
         ),
         child: Center(
@@ -560,7 +567,9 @@ class _PinScreenState extends State<PinScreen> with SingleTickerProviderStateMix
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w500,
-              color: _isLocked ? Colors.grey : null,
+              color: _isLocked 
+                  ? Colors.grey 
+                  : (isDark ? Colors.white : Colors.black87),
             ),
           ),
         ),

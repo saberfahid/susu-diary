@@ -12,8 +12,8 @@ class AIService {
   String _baseUrl = 'https://api.longcat.chat/openai/v1';
   String _model = 'LongCat-Flash-Chat';
   
-  // Daily usage tracking (10,000 tokens free per day)
-  static const int _dailyTokenLimit = 10000;
+  // Daily usage tracking (1,500 tokens free per day)
+  static const int _dailyTokenLimit = 1500;
   static const String _usageKey = 'longcat_daily_usage';
   static const String _usageDateKey = 'longcat_usage_date';
   int _tokensUsedToday = 0;
