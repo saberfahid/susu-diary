@@ -52,6 +52,12 @@ android {
             shrinkResources false
         }
     }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+    }
 }
 
 dependencies {
